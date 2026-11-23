@@ -241,6 +241,13 @@ export default function Viewport({ model, selected, onSelect, view, showLabels, 
       return { outer: sorted[0].pts, holes: cutouts };
     };
 
+    // The flange transform below maps flange y to z = W/2 - y, while holes use
+    // z = y - W/2. Mirror flange outlines so contours and holes agree.
+    const mirrorFlange = (outline) => {
+      const flip = (pts) => pts.map((p) => ({ x: p.x, y: W - p.y }));
+      return { outer: flip(outline.outer), holes: outline.holes.map(flip) };
+    };
+
     const plate = (outline, transform) => {
       const geo = new THREE.ExtrudeGeometry(shapeFrom(outline.outer, outline.holes), {
         depth: transform.depth, bevelEnabled: false, curveSegments: 24,
@@ -255,11 +262,11 @@ export default function Viewport({ model, selected, onSelect, view, showLabels, 
 
     const isOpen = ["I", "U", "H", "M", "C"].includes(header.profileCode);
     if (isOpen) {
-      plate(outlineFor("o", rect(0, 0, L, W)), {
+      plate(mirrorFlange(outlineFor("o", rect(0, 0, L, W))), {
         depth: TF,
         apply: (g) => { g.rotateX(-Math.PI / 2); g.translate(0, H - TF, W / 2); },
       });
-      plate(outlineFor("u", rect(0, 0, L, W)), {
+      plate(mirrorFlange(outlineFor("u", rect(0, 0, L, W))), {
         depth: TF,
         apply: (g) => { g.rotateX(-Math.PI / 2); g.translate(0, 0, W / 2); },
       });
