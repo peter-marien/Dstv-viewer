@@ -63,6 +63,43 @@ function makeLabel(text, color, worldHeight) {
   return sprite;
 }
 
+/**
+ * Flat SI marking text lying on a face. The anchor (local 0,0) is the start
+ * of the text baseline; letters are `size` tall along `up`, run along `right`,
+ * and the front of the plane faces `normal`.
+ */
+function makeMarking(text, color, size) {
+  const font = 96;
+  const ctx0 = document.createElement("canvas").getContext("2d");
+  const fontSpec = `600 ${font}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx0.font = fontSpec;
+  const cw = Math.ceil(ctx0.measureText(text).width) + 8;
+  const ch = Math.ceil(font * 1.25);
+  const baseline = Math.round(font * 0.98);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = cw;
+  canvas.height = ch;
+  const ctx = canvas.getContext("2d");
+  ctx.font = fontSpec;
+  ctx.fillStyle = color;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(text, 4, baseline);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  // cap height of a monospace face is roughly 0.72 of the font size
+  const scale = size / (font * 0.72);
+  const w = cw * scale, h = ch * scale;
+  const geo = new THREE.PlaneGeometry(w, h);
+  geo.translate(w / 2 - 4 * scale, h / 2 - (ch - baseline) * scale, 0);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -2,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
 /* ------------------------------------------------------------------ */
 
 export default function Viewport({ model, selected, onSelect, view, showLabels, onApi }) {
@@ -313,6 +350,30 @@ export default function Viewport({ model, selected, onSelect, view, showLabels, 
       mesh.renderOrder = 2;
       s.root.add(mesh);
       s.holeMeshes.push(mesh);
+    });
+
+    /* --- SI markings, drawn on the outside of their face --- */
+    const eps = 0.4;
+    const faceFrame = {
+      v: { at: (x, y) => new THREE.Vector3(x, y, TW / 2 + eps), ey: new THREE.Vector3(0, 1, 0), n: new THREE.Vector3(0, 0, 1) },
+      h: { at: (x, y) => new THREE.Vector3(x, y, -TW / 2 - eps), ey: new THREE.Vector3(0, 1, 0), n: new THREE.Vector3(0, 0, -1) },
+      o: { at: (x, y) => new THREE.Vector3(x, H + eps, y - W / 2), ey: new THREE.Vector3(0, 0, 1), n: new THREE.Vector3(0, 1, 0) },
+      u: { at: (x, y) => new THREE.Vector3(x, -eps, y - W / 2), ey: new THREE.Vector3(0, 0, 1), n: new THREE.Vector3(0, -1, 0) },
+    };
+    (model.markings || []).forEach((m) => {
+      const f = faceFrame[m.face];
+      if (!f) return;
+      const a = (m.angle * Math.PI) / 180;
+      // baseline direction in the face's own x/y, then up chosen so the text
+      // reads correctly when the face is looked at from outside the part
+      const right = new THREE.Vector3(1, 0, 0).multiplyScalar(Math.cos(a))
+        .add(f.ey.clone().multiplyScalar(Math.sin(a))).normalize();
+      const up = new THREE.Vector3().crossVectors(f.n, right).normalize();
+      const mesh = makeMarking(m.text, C.mark, m.size);
+      mesh.matrixAutoUpdate = false;
+      mesh.matrix.makeBasis(right, up, f.n).setPosition(f.at(m.x, m.y));
+      mesh.renderOrder = 3;
+      s.root.add(mesh);
     });
 
     /* --- saw angle callouts and overall dimension --- */

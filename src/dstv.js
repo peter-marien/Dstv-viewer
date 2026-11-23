@@ -290,4 +290,5 @@ export const PALETTE = {
   mill: "#F2A03D",   // slotted holes
   punch: "#E0524F",  // round holes
   steel: "#8FA6BC",  // beam body
+  mark: "#7FE3C8",   // SI marking text
 };

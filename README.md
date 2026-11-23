@@ -35,7 +35,7 @@ hole anywhere in the app scrolls the source to its line.
 | `BO` | Holes | Round and slotted holes on any face |
 | `AK` | Outer contour | The sawn outline of each face — this is where saw angles come from |
 | `IK` | Inner contour | Cut-outs, rendered as holes in the plate |
-| `SI` | Marking text | Parsed, not yet drawn |
+| `SI` | Marking text | Text drawn flat on the outside of its face, listed in the sidebar |
 
 Face codes are `v` (web front), `h` (web back), `o` (top flange), `u` (bottom
 flange). A face code appears on the first row of a block and is inherited by the
@@ -76,7 +76,6 @@ at the outermost point. If your files lean the other way, flip the sign in
   hole loop in `src/Viewport.jsx`.
 - Only open profiles (`I`, `U`, `H`, `M`, `C`) get flanges. Plates, tubes and
   angles render as the web plate alone.
-- `SI` marking text is parsed but not drawn in the 3D view.
 
 ## Layout
 
