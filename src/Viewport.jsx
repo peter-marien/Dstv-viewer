@@ -318,10 +318,15 @@ export default function Viewport({ model, selected, onSelect, view, showLabels, 
     /* --- saw angle callouts and overall dimension --- */
     const labelSize = Math.max(H * 0.14, L * 0.018);
     if (showLabels) {
-      const { start, end } = endCutAngles(web.outer, L);
-      const callout = (cut) => {
-        const square = cut.angle < 0.05;
-        const spr = makeLabel(square ? "90.0 deg square" : `${cut.angle.toFixed(1)} deg saw`,
+      const webCuts = endCutAngles(web.outer, L);
+      const flangeOutline = isOpen ? outlineFor("u", rect(0, 0, L, W)).outer : null;
+      const flangeCuts = flangeOutline ? endCutAngles(flangeOutline, L) : null;
+      const callout = (cut, flangeCut) => {
+        const parts = [];
+        if (cut.angle >= 0.05) parts.push(`web ${cut.angle.toFixed(1)} deg`);
+        if (flangeCut && flangeCut.angle >= 0.05) parts.push(`flange ${flangeCut.angle.toFixed(1)} deg`);
+        const square = parts.length === 0;
+        const spr = makeLabel(square ? "90.0 deg square" : parts.join(" / "),
           square ? C.graph : C.chalk, labelSize);
         spr.position.set(cut.at, H + labelSize * 1.6, 0);
         s.root.add(spr);
@@ -333,8 +338,8 @@ export default function Viewport({ model, selected, onSelect, view, showLabels, 
           color: C.chalk, transparent: true, opacity: 0.5,
         })));
       };
-      callout(start);
-      callout(end);
+      callout(webCuts.start, flangeCuts?.start);
+      callout(webCuts.end, flangeCuts?.end);
 
       const dim = makeLabel(`${L.toFixed(0)} mm`, C.graph, labelSize * 0.9);
       dim.position.set(L / 2, -labelSize * 2.2, 0);

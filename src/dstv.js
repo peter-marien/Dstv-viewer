@@ -161,6 +161,16 @@ export function parseDSTV(text) {
     }
   });
 
+  /* --- header cut angles: synthesize AK outlines for faces that have none --- */
+  const headerAngles = [header.webStartCut, header.webEndCut, header.flangeStartCut, header.flangeEndCut];
+  if (headerAngles.some((a) => Math.abs(a) > 1e-6)) {
+    const synth = headerCutOutlines(header);
+    ["v", "o", "u"].forEach((face) => {
+      if (contours.some((c) => c.face === face && c.kind === "AK")) return;
+      contours.push({ face, kind: "AK", pts: synth[face], line: st ? st.headerLine : 0, fromHeader: true });
+    });
+  }
+
   /* --- SI: markings --- */
   const markings = [];
   blocks.filter((b) => b.code === "SI").forEach((b) => {
@@ -198,6 +208,38 @@ export function polygonArea(pts) {
 
 export function rect(x0, y0, x1, y1) {
   return [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+}
+
+/**
+ * Outlines of the web (v) and flanges (o, u) cut by the ST header saw angles.
+ *
+ * Each end is treated as one plane cut. The web angle tilts the cut over the
+ * profile height, the flange angle over the flange width. A positive angle
+ * shortens the part at web y = 0 and flange y = 0; x = 0 stays at the
+ * outermost point of the part, which is how hole positions are measured.
+ */
+export function headerCutOutlines(header) {
+  const { length: L, height: H, width: W } = header;
+  const tan = (deg) => (Math.abs(deg) >= 89 ? 0 : Math.tan((deg * Math.PI) / 180));
+  // setback of the cut from the part end at web height y and flange position z
+  const plane = (webDeg, flangeDeg) => {
+    const tw = tan(webDeg), tf = tan(flangeDeg);
+    const raw = (y, z) => tw * (H - y) + tf * (W - z);
+    const min = Math.min(raw(0, 0), raw(0, W), raw(H, 0), raw(H, W));
+    return (y, z) => raw(y, z) - min;
+  };
+  const sb = plane(header.webStartCut, header.flangeStartCut);
+  const eb = plane(header.webEndCut, header.flangeEndCut);
+  const s = (y, z) => sb(y, z);
+  const e = (y, z) => L - eb(y, z);
+  const flange = (y) => [
+    { x: s(y, 0), y: 0 }, { x: e(y, 0), y: 0 }, { x: e(y, W), y: W }, { x: s(y, W), y: W },
+  ];
+  return {
+    v: [{ x: s(0, W / 2), y: 0 }, { x: e(0, W / 2), y: 0 }, { x: e(H, W / 2), y: H }, { x: s(H, W / 2), y: H }],
+    u: flange(0),
+    o: flange(H),
+  };
 }
 
 /**

@@ -98,11 +98,15 @@ export default function App() {
   /* --- derived summary --- */
   const roundCount = model.holes.filter((h) => !h.slotted).length;
   const slotCount = model.holes.filter((h) => h.slotted).length;
-  const webContour = model.contours.find((c) => c.face === "v" && c.kind === "AK");
-  const cuts = endCutAngles(
-    webContour ? webContour.pts : rect(0, 0, model.header.length, model.header.height),
-    model.header.length
-  );
+  const { length: L, height: H, width: W } = model.header;
+  const outerOf = (face, fallback) =>
+    model.contours.find((c) => c.face === face && c.kind === "AK") || { pts: fallback };
+  const webContour = outerOf("v", rect(0, 0, L, H));
+  const flangeContour = outerOf("u", rect(0, 0, L, W));
+  const webCuts = endCutAngles(webContour.pts, L);
+  const flangeCuts = endCutAngles(flangeContour.pts, L);
+  const cutsFromHeader = Boolean(webContour.fromHeader || flangeContour.fromHeader);
+  const fmtCut = (c) => (c.angle < 0.05 ? "square" : `${c.angle.toFixed(1)}°`);
   const sel = model.holes.find((h) => h.id === selected) || null;
 
   return (
@@ -165,9 +169,15 @@ export default function App() {
 
               <section>
                 <h2>Saw angles</h2>
-                <div className="cutrow"><span>Start</span><b>{cuts.start.angle < 0.05 ? "square" : `${cuts.start.angle.toFixed(1)}°`}</b></div>
-                <div className="cutrow"><span>End</span><b>{cuts.end.angle < 0.05 ? "square" : `${cuts.end.angle.toFixed(1)}°`}</b></div>
-                <p className="note">Measured off the web outer contour (AK), not the ST header value.</p>
+                <div className="cutrow"><span>Web start</span><b>{fmtCut(webCuts.start)}</b></div>
+                <div className="cutrow"><span>Web end</span><b>{fmtCut(webCuts.end)}</b></div>
+                <div className="cutrow"><span>Flange start</span><b>{fmtCut(flangeCuts.start)}</b></div>
+                <div className="cutrow"><span>Flange end</span><b>{fmtCut(flangeCuts.end)}</b></div>
+                <p className="note">
+                  {cutsFromHeader
+                    ? "Taken from the ST header - the file has no outer contour (AK) for these faces."
+                    : "Measured off the outer contours (AK), not the ST header value."}
+                </p>
               </section>
 
               <section className="grow">

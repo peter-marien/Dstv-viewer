@@ -55,11 +55,17 @@ Round holes render red, slots amber.
 
 ### Saw angles
 
-The start and end angles in the sidebar are measured off the **web outer contour**,
-not read from the `ST` header. If the two disagree, the contour is what the saw
-actually cuts. Each face is extruded from its own `AK` contour — web at web
-thickness, flanges at flange thickness — so mitres and copes appear in the geometry
-rather than being drawn on top of a rectangular block.
+The sidebar shows web and flange start and end angles, measured off the **outer
+contours** (`AK`) rather than read from the `ST` header. If the two disagree, the
+contour is what the saw actually cuts. Each face is extruded from its own `AK`
+contour — web at web thickness, flanges at flange thickness — so mitres and copes
+appear in the geometry rather than being drawn on top of a rectangular block.
+
+When a face has no `AK` contour, its outline is built from the `ST` header cut
+angles instead (web start/end, flange start/end), treating each end as one plane
+cut. A positive angle shortens the part at web y = 0 and flange y = 0, with x = 0
+at the outermost point. If your files lean the other way, flip the sign in
+`headerCutOutlines` in `src/dstv.js`.
 
 ## Known limits
 
