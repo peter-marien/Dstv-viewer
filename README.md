@@ -99,8 +99,9 @@ CLI or test harness directly.
 ## Security posture
 
 `contextIsolation` on, `nodeIntegration` off, `sandbox` on. The renderer reaches
-the filesystem only through the four functions exposed in `preload.cjs`; there is
-no `fs` or `ipcRenderer` on `window`. A CSP in `index.html` restricts script
+the filesystem only through the `window.dstv` bridge in `preload.cjs` — open
+dialog, read a path, save a PNG, app info, and two event subscriptions for opened
+files and menu commands; there is no `fs` or `ipcRenderer` on `window`. A CSP in `index.html` restricts script
 sources to the bundle. External links open in the system browser rather than in an
 Electron window.
 
