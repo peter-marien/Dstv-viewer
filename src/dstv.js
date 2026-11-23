@@ -172,19 +172,35 @@ export function parseDSTV(text) {
   }
 
   /* --- SI: markings --- */
+  // Row layout: [face] x y [extra...] angle height text
+  // Post-processors differ in how many numeric fields sit between y and the
+  // text (4 or 5 in practice), so read the numbers up front and take angle and
+  // height from the end of that run. Coordinates may carry a reference suffix
+  // such as "737.88u".
   const markings = [];
+  const NUM = /^-?\d+(?:[.,]\d+)?[a-z]?$/i;
   blocks.filter((b) => b.code === "SI").forEach((b) => {
     let face = "v";
     b.rows.forEach((row) => {
       const parts = row.text.split(/\s+/).filter(Boolean);
       let p = 0;
       if (/^[a-z]$/i.test(parts[0])) { face = parts[0].toLowerCase(); p = 1; }
+      const rest = parts.slice(p);
+      let n = 0;
+      while (n < rest.length && NUM.test(rest[n])) n++;
+      // a purely numeric marking such as "101": the last number is the text
+      if (n === rest.length && n > 2) n--;
+      const nums = rest.slice(0, n).map(toNum);
+      const text = rest.slice(n).join(" ");
+      if (nums.length < 2 || !text) return;
       markings.push({
+        id: markings.length,
         face,
-        x: toNum(parts[p]),
-        y: toNum(parts[p + 1]),
-        size: toNum(parts[p + 4]) || 10,
-        text: parts[parts.length - 1],
+        x: nums[0],
+        y: nums[1],
+        angle: nums.length >= 4 ? nums[nums.length - 2] : 0,
+        size: (nums.length >= 3 && nums[nums.length - 1] > 0) ? nums[nums.length - 1] : 10,
+        text,
         line: row.idx,
       });
     });
