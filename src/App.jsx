@@ -180,6 +180,22 @@ export default function App() {
                 </p>
               </section>
 
+              {model.markings.length > 0 && (
+                <section>
+                  <h2>Markings</h2>
+                  {model.markings.map((m) => (
+                    <div key={m.id} className="markrow" title={`line ${m.line + 1}`}>
+                      <span className="swatch" style={{ background: C.mark }} />
+                      <span className="hmain">{m.text}</span>
+                      <span className="hpos">
+                        {FACE_NAMES[m.face] || m.face} · x{m.x.toFixed(0)} y{m.y.toFixed(0)} · {m.size} mm
+                        {m.angle ? ` · ${m.angle}°` : ""}
+                      </span>
+                    </div>
+                  ))}
+                </section>
+              )}
+
               <section className="grow">
                 <h2>
                   Holes

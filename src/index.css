@@ -98,6 +98,10 @@ body {
   color: var(--chalk); font-family: "IBM Plex Mono", monospace; }
 .holerow:hover { background: rgba(143,166,188,.08); }
 .holerow.on { background: rgba(242,160,61,.14); }
+.markrow { display: grid; grid-template-columns: 10px 1fr; gap: 3px 9px;
+  border-bottom: 1px solid rgba(30,53,73,.7); padding: 8px 6px; margin: 0 -6px;
+  color: var(--chalk); font-family: "IBM Plex Mono", monospace; }
+.markrow .swatch { border-radius: 2px; }
 .swatch { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; grid-row: span 2; }
 .hmain { font-size: 12.5px; }
 .hpos { font-size: 10.5px; color: var(--graph); }
