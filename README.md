@@ -41,7 +41,9 @@ write `electron.exe` (no newline) to `node_modules/electron/path.txt`.
 
 **Model tab** — the part in 3D. Drag to orbit, shift-drag to pan, scroll to zoom,
 click a hole to select it. `iso` / `front` / `top` / `end` are preset views;
-`notes` toggles the angle and dimension callouts.
+`notes` toggles the angle and dimension callouts. The sidebar lists the profile
+dimensions, the web and flange saw angles at each end, the `SI` markings and every
+hole. Clicking a hole in the list selects it in the model.
 
 **Source tab** — the raw file with line numbers and colour-coded block keywords.
 Every `BO` data line is clickable: clicking it selects that hole, and selecting a
@@ -51,9 +53,9 @@ hole anywhere in the app scrolls the source to its line.
 
 | Block | Meaning | Used for |
 |---|---|---|
-| `ST` | Part header | Profile name, grade, piece mark, length, height, flange width, flange and web thickness |
+| `ST` | Part header | Profile name, grade, piece mark, length, height, flange width, flange and web thickness; web and flange cut angles for faces without an `AK` contour |
 | `BO` | Holes | Round and slotted holes on any face |
-| `AK` | Outer contour | The sawn outline of each face — this is where saw angles come from |
+| `AK` | Outer contour | The sawn outline of each face — the preferred source of saw angles |
 | `IK` | Inner contour | Cut-outs, rendered as holes in the plate |
 | `SI` | Marking text | Text drawn flat on the outside of its face, listed in the sidebar |
 
@@ -87,6 +89,25 @@ cut. A positive angle shortens the part at web y = 0 and flange y = 0, with x = 
 at the outermost point. If your files lean the other way, flip the sign in
 `headerCutOutlines` in `src/dstv.js`.
 
+The sidebar note under the angles says which source was used.
+
+### Markings
+
+An `SI` row is `face x y … angle height text`. Post-processors put either four or
+five numbers before the text, so the parser reads the run of numbers and takes the
+angle and letter height from its end. These are both read the same way:
+
+```
+  u  737.88u  40.00  0.00  20  PR64          4 numbers: x y angle height
+  v 1150.00  210.00  0.00  0.00  10.00  B-101  5 numbers: x y ? angle height
+```
+
+A reference suffix on a coordinate (`737.88u`) is ignored, text may contain
+spaces, and a marking that is only a number (`101`) is still read as text. Each
+marking is drawn flat on the outside of its face at its letter height, starting at
+`x y` and turned by `angle`, so it reads correctly when that face is viewed from
+outside the part. Markings render mint.
+
 ## Known limits
 
 - Arc radii on contour vertices are drawn as straight chords. You get a warning
@@ -96,6 +117,12 @@ at the outermost point. If your files lean the other way, flip the sign in
   hole loop in `src/Viewport.jsx`.
 - Only open profiles (`I`, `U`, `H`, `M`, `C`) get flanges. Plates, tubes and
   angles render as the web plate alone.
+- The header saw-angle sign convention is checked against real files only for a
+  positive web start cut. Flange and end cuts follow the same rule by assumption.
+- The orbit stops just short of looking straight up, so markings on the underside
+  of the bottom flange are only visible at a shallow angle.
+- Markings and `SI` lines are not selectable; only holes are linked between the
+  model, the sidebar and the Source tab.
 
 ## Layout
 
