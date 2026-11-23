@@ -17,6 +17,26 @@ npm run dist    # build installers into release/
 `npm run dist:win`, `dist:mac` and `dist:linux` target one platform. Cross-building
 a Windows installer from Linux needs Wine; building on the target OS is simpler.
 
+`npx vite` on its own serves the renderer at http://127.0.0.1:5173 in any browser.
+Without the Electron shell, **Open part** uses the browser's file picker and the
+native menu and file associations are not available.
+
+### If Electron fails to start
+
+`Electron failed to install correctly` means the Electron binary was never
+downloaded into `node_modules/electron/dist`. The `electron` package fetches it in
+an install script, which does not run when:
+
+- dependencies were installed with `--ignore-scripts`, or
+- your npm only runs install scripts for allowed packages (`allowScripts`) and
+  `electron` is not on that list — `npm install-scripts ls` shows what is waiting.
+
+Allow the script, or run it by hand with `node node_modules/electron/install.js`.
+If `dist/` then holds only a `locales` folder, the download worked but the unzip
+stopped early; this happened on Node 26. Use Node 22 LTS, or unzip the cached
+archive from `%LOCALAPPDATA%\electron\Cache` into `node_modules/electron/dist` and
+write `electron.exe` (no newline) to `node_modules/electron/path.txt`.
+
 ## What it shows
 
 **Model tab** — the part in 3D. Drag to orbit, shift-drag to pan, scroll to zoom,
